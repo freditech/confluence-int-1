@@ -52,7 +52,7 @@ jobs:
         # Replace 'process_readmes.py' with the actual name you used for your script file
         run: |
           python -m pip install --upgrade pip
-          pip install atlassian-python-api md2cf
+          pip install atlassian-python-api md2cf markdown
           echo "--- Debugging Python Environment ---"
           echo "Which python is being used?"
           which python || echo "Python not found in PATH" # Find the python executable
