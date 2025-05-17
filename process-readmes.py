@@ -4,8 +4,10 @@ import os
 import re
 from atlassian import Confluence
 import io # Import io for reading the file content
-# from md2cf.confluence_publisher import ConfluencePublisher
-from md2cf.publisher import ConfluencePublisher
+# import mistune
+import markdown
+# from md2cf.confluence_renderer import ConfluenceRenderer
+
 
 # Confluence details (replace with your actual details)
 
@@ -190,12 +192,12 @@ def convert_markdown_to_confluence_storage(markdown_content):
     try:
         # md2cf's Publisher can convert markdown to storage format
         # We need a dummy publisher instance to access the conversion method
-        publisher = ConfluencePublisher(
-            confluence_host=CONFLUENCE_URL,
-            confluence_username=USERNAME,
-            confluence_password=PASSWORD, # Or token
-            confluence_space=SPACE_KEY
-        )
+        # publisher = ConfluencePublisher(
+        #     confluence_host=CONFLUENCE_URL,
+        #     confluence_username=USERNAME,
+        #     confluence_password=PASSWORD, # Or token
+        #     confluence_space=SPACE_KEY
+        # )
         # Use the internal converter (assuming it's accessible or wrap it)
         # A more direct way if available in the library would be preferable.
         # Looking at md2cf source/docs, it's primarily CLI or requires more setup for library use.
@@ -203,7 +205,7 @@ def convert_markdown_to_confluence_storage(markdown_content):
         # Let's use a common markdown to html converter for simplicity if md2cf is hard to use as a library.
         # Searching again for simple markdown to html python library.
         # Using 'markdown' library as a common choice for Markdown to HTML.
-        import markdown
+
         html_content = markdown.markdown(markdown_content)
         # Confluence Storage Format is often HTML wrapped in <ac:structured-macro> or similar,
         # or sometimes just clean HTML is accepted in the 'storage' representation.
