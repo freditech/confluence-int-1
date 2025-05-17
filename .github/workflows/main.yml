@@ -42,5 +42,8 @@ jobs:
           pip install atlassian-python-api
 
       - name: Run the README processing script
+        env: 
+          CONFLUENCE_USER_NAME: ${{ secrets.CONFLUENCE_USER_NAME }}
+          CONFLUENCE_USER_PAT: ${{ secrets.CONFLUENCE_USER_PAT }}
         # Replace 'process_readmes.py' with the actual name you used for your script file
         run: python process-readmes.py
