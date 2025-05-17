@@ -1,0 +1,46 @@
+name: Process Changed READMEs on Merge
+
+# This workflow triggers on pull request events
+on:
+  pull_request:
+    # Specifically trigger when the pull request is closed
+    # This includes both merged and closed-without-merging states
+    types: [closed]
+
+# Define the jobs to run
+jobs:
+  process_readme_job:
+    # This conditional ensures the job only runs if the pull request was merged
+    if: github.event.pull_request.merged == true
+
+    # Specify the runner environment
+    runs-on: ubuntu-latest
+
+    # Define the steps for this job
+    steps:
+      - name: Checkout code
+        # Use the official checkout action
+        uses: actions/checkout@v4
+        # We need to fetch at least 2 commits to be able to compare HEAD with HEAD~1
+        # (the merge commit with its parent on the base branch).
+        # # fetch-depth: 0 is crucial to fetch the full history needed for git diff comparisons
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        # Use the official setup-python action
+        uses: actions/setup-python@v5
+        with:
+          # Specify the Python version you want to use
+          python-version: '3.x' # Or a specific version like '3.9' or '3.10'
+
+      - name: Install Python dependencies (if needed)
+        # Uncomment and modify this step if your process_first_line function
+        # requires any Python libraries (e.g., requests, pyyaml).
+        # run: |
+        #   python -m pip install --upgrade pip
+        #   pip install your-library-name
+
+      - name: Run the README processing script
+        # Replace 'process_readmes.py' with the actual name you used for your script file
+        run: python process_readmes.py
