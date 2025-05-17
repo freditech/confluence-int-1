@@ -2,6 +2,28 @@ import subprocess
 import sys
 import os
 import re
+from atlassian import Confluence
+import io # Import io for reading the file content
+from md2cf.confluence_publisher import ConfluencePublisher
+
+# Confluence details (replace with your actual details)
+
+CONFLUENCE_URL = os.getenv("CONFLUENCE_URL")
+USERNAME = os.environ.get("CONFLUENCE_USER_NAME")
+PASSWORD = os.environ.get("CONFLUENCE_USER_PAT")
+SPACE_KEY = os.environ.get("CONFLUENCE_SPACE_ID")
+PARENT_ID = os.environ.get("CONFLUENCE_PARENT_ID")
+
+# Page details
+# page_title = ""
+# page_content = "" # HTML or Storage format
+
+# Initialize Confluence API client
+confluence = Confluence(
+    url=CONFLUENCE_URL,
+    username=USERNAME,
+    password=PASSWORD
+)
 
 def get_changed_files():
     """
@@ -71,6 +93,7 @@ def get_first_line(filepath):
         print(f"Error reading file {filepath}: {e}", file=sys.stderr)
         return None
 
+
 def process_first_line(line, filepath):
     """
     Placeholder function to process the first line of a README file.
@@ -79,14 +102,150 @@ def process_first_line(line, filepath):
     print("-" * 20)
     print(f"Processing first line from: {filepath}")
     print(f"First Line: '{line}'")
-    # --- ADD YOUR CUSTOM LOGIC HERE ---
-    # For example:
-    # - Send the line to another system
-    # - Parse the line for specific information
-    # - Validate the format of the first line
-    # - Trigger another action based on the content
-    # some_other_function(line, metadata={'file': filepath})
+
+    process_readme_as_page(line, filepath)
+
     print("-" * 20)
+
+
+def get_page_by_title(space_key, title):
+    """
+    Checks if a page with the given title exists in the specified space.
+    Returns the page object if found, otherwise returns None.
+    """
+    try:
+        # Use CQL to search for the page by title and space
+        cql_query = f'space = "{space_key}" and title = "{title}"'
+        search_results = confluence.cql(cql_query)
+
+        if search_results and 'results' in search_results and len(search_results['results']) > 0:
+            # Assuming the first result is the correct page
+            return search_results['results'][0]
+        else:
+            return None
+    except Exception as e:
+        print(f"Error searching for page '{title}' in space '{space_key}': {e}")
+        return None
+
+
+def create_page(space_key, title, body, parent_id=None):
+    """
+    Creates a new page in the specified space.
+    Returns the new page object if successful, otherwise returns None.
+    """
+    try:
+        new_page = confluence.create_page(
+            space=space_key,
+            title=title,
+            body=body,
+            parent_id=parent_id, # Specify parent_id if creating a sub-page
+            representation='storage' # Or 'wiki', 'atlas_doc_format' depending on your content format
+        )
+        print(f"Page '{title}' created successfully.")
+        return new_page
+    except Exception as e:
+        print(f"Error creating page '{title}' in space '{space_key}': {e}")
+        return None
+
+
+def update_page(page_id, title, body, version):
+    """
+    Updates an existing page with the given content.
+    Requires the page ID, title, new body content, and the current version number.
+    Returns the updated page object if successful, otherwise returns None.
+    """
+    try:
+        updated_page = confluence.update_page(
+            page_id=page_id,
+            title=title,
+            body=body,
+            version=version,
+            representation='storage' # Or 'wiki', 'atlas_doc_format'
+        )
+        print(f"Page '{title}' (ID: {page_id}) updated successfully.")
+        return updated_page
+    except Exception as e:
+        print(f"Error updating page '{title}' (ID: {page_id}): {e}")
+        return None
+
+
+def read_readme_content(file_path):
+    """Reads the content of a file."""
+    try:
+        with io.open(file_path, mode="r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        print(f"Error: README file not found at {file_path}")
+        return None
+    except Exception as e:
+        print(f"Error reading file {file_path}: {e}")
+        return None
+
+
+def convert_markdown_to_confluence_storage(markdown_content):
+    """
+    Converts Markdown content to Confluence Storage Format (XHTML) using md2cf.
+    """
+    try:
+        # md2cf's Publisher can convert markdown to storage format
+        # We need a dummy publisher instance to access the conversion method
+        publisher = ConfluencePublisher(
+            confluence_host=CONFLUENCE_URL,
+            confluence_username=USERNAME,
+            confluence_password=PASSWORD, # Or token
+            confluence_space=SPACE_KEY
+        )
+        # Use the internal converter (assuming it's accessible or wrap it)
+        # A more direct way if available in the library would be preferable.
+        # Looking at md2cf source/docs, it's primarily CLI or requires more setup for library use.
+        # A simpler markdown-to-html converter might be a more direct approach if md2cf library usage is complex.
+        # Let's use a common markdown to html converter for simplicity if md2cf is hard to use as a library.
+        # Searching again for simple markdown to html python library.
+        # Using 'markdown' library as a common choice for Markdown to HTML.
+        import markdown
+        html_content = markdown.markdown(markdown_content)
+        # Confluence Storage Format is often HTML wrapped in <ac:structured-macro> or similar,
+        # or sometimes just clean HTML is accepted in the 'storage' representation.
+        # Let's assume basic HTML from markdown conversion works with 'storage' representation.
+        return html_content
+
+    except ImportError:
+         print("Error: 'markdown' library not found. Please install it: pip install markdown")
+         return None
+    except Exception as e:
+        print(f"Error converting Markdown to Confluence Storage Format: {e}")
+        return None
+
+
+def get_page_content(readme_file_path):
+    readme_content_md = read_readme_content(readme_file_path)
+    page_content_storage = None
+    if readme_content_md is not None:
+        # Convert Markdown to Confluence Storage Format (HTML)
+        page_content_storage = convert_markdown_to_confluence_storage(readme_content_md)
+    else:
+        print("readme content is None. ReadMe might not be found at the specified path.")
+    return page_content_storage
+
+
+# ReadMe <> Page Processing logic
+def process_readme_as_page(page_title, readme_file_path):
+    existing_page = get_page_by_title(SPACE_KEY, page_title)
+    page_content = get_page_content(readme_file_path)
+    if page_content is not None:
+        if existing_page:
+            print(f"Page '{page_title}' found. Attempting to update...")
+            page_id = existing_page['id']
+            current_version = existing_page['version']['number']
+            # Increment the version number for the update
+            new_version = current_version + 1
+            update_page(page_id, page_title, page_content, new_version)
+        else:
+            print(f"Page '{page_title}' not found. Attempting to create...")
+            # Specify parent_id if you want to create this page as a child of another page
+            create_page(SPACE_KEY, page_title, page_content)
+    else:
+        print("Markdown conversion failed. Cannot get page content.")
 
 
 def main():
@@ -119,4 +278,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
