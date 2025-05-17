@@ -34,12 +34,12 @@ jobs:
           # Specify the Python version you want to use
           python-version: '3.x' # Or a specific version like '3.9' or '3.10'
 
-      # - name: Install Python dependencies (if needed)
+      - name: Install Python dependencies (if needed)
         # Uncomment and modify this step if your process_first_line function
         # requires any Python libraries (e.g., requests, pyyaml).
-        # run: |
-        #   python -m pip install --upgrade pip
-        #   pip install your-library-name
+        run: |
+          python -m pip install --upgrade pip
+          pip install atlassian-python-api
 
       - name: Run the README processing script
         # Replace 'process_readmes.py' with the actual name you used for your script file
