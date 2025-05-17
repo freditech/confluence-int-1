@@ -39,7 +39,7 @@ jobs:
         # requires any Python libraries (e.g., requests, pyyaml).
         run: |
           python -m pip install --upgrade pip
-          pip install atlassian-python-api
+          pip install atlassian-python-api md2cf
 
       - name: Run the README processing script
         env: 
