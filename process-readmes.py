@@ -131,7 +131,7 @@ def get_page_by_title(space_key, title):
         return None
 
 
-def create_page(space_key, title, body, parent_id=None):
+def create_page(space_key, title, body):
     """
     Creates a new page in the specified space.
     Returns the new page object if successful, otherwise returns None.
@@ -141,7 +141,7 @@ def create_page(space_key, title, body, parent_id=None):
             space=space_key,
             title=title,
             body=body,
-            parent_id=parent_id, # Specify parent_id if creating a sub-page
+            parent_id=PARENT_ID, # Specify parent_id if creating a sub-page
             representation='storage' # Or 'wiki', 'atlas_doc_format' depending on your content format
         )
         print(f"Page '{title}' created successfully.")
