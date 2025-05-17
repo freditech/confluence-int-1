@@ -45,5 +45,6 @@ jobs:
         env: 
           CONFLUENCE_USER_NAME: ${{ secrets.CONFLUENCE_USER_NAME }}
           CONFLUENCE_USER_PAT: ${{ secrets.CONFLUENCE_USER_PAT }}
+          CONFLUENCE_URL: ${{ secrets.CONFLUENCE_URL }}
         # Replace 'process_readmes.py' with the actual name you used for your script file
         run: python process-readmes.py
