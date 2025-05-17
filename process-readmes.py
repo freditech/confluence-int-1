@@ -4,7 +4,8 @@ import os
 import re
 from atlassian import Confluence
 import io # Import io for reading the file content
-from md2cf.confluence_publisher import ConfluencePublisher
+# from md2cf.confluence_publisher import ConfluencePublisher
+from md2cf.publisher import ConfluencePublisher
 
 # Confluence details (replace with your actual details)
 
