@@ -119,7 +119,7 @@ def get_page_by_title(space_key, title, parent_id):
     try:
         # Use CQL to search for the page by title and space
         cql_query = f'space = "{space_key}" and title = "{title}" and parent = "{parent_id}" and type="page" '
-        search_results = confluence.cql(cql_query)
+        search_results = confluence.cql(cql_query, expand='version')
 
         if search_results and 'results' in search_results and len(search_results['results']) > 0:
             # Assuming the first result is the correct page
