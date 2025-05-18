@@ -123,7 +123,9 @@ def get_page_by_title(space_key, title, parent_id):
 
         if search_results and 'results' in search_results and len(search_results['results']) > 0:
             # Assuming the first result is the correct page
-            found_item = search_results['results'][0]
+            result = search_results['results'][0]
+            detailed_result = confluence.get_page_by_id(result['content']['id'], expand='version,body.storage')
+            found_item = detailed_result['results'][0]['content']
             if isinstance(found_item, dict) and 'id' in found_item and 'version' in found_item and isinstance(
                     found_item.get('version'), dict) and 'number' in found_item.get('version'):
                 # Also explicitly check if the 'type' of the content is 'page'
