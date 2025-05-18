@@ -111,19 +111,30 @@ def process_first_line(line, filepath):
     print("-" * 20)
 
 
-def get_page_by_title(space_key, title):
+def get_page_by_title(space_key, title, parent_id):
     """
     Checks if a page with the given title exists in the specified space.
     Returns the page object if found, otherwise returns None.
     """
     try:
         # Use CQL to search for the page by title and space
-        cql_query = f'space = "{space_key}" and title = "{title}"'
+        cql_query = f'space = "{space_key}" and title = "{title} and parent = "{parent_id}" and type="page" '
         search_results = confluence.cql(cql_query)
 
         if search_results and 'results' in search_results and len(search_results['results']) > 0:
             # Assuming the first result is the correct page
-            return search_results['results'][0]
+            found_item = search_results['results'][0]
+            if isinstance(found_item, dict) and 'id' in found_item and 'version' in found_item and isinstance(
+                    found_item.get('version'), dict) and 'number' in found_item.get('version'):
+                # Also explicitly check if the 'type' of the content is 'page'
+                return found_item
+            else:
+                print(
+                    f"Warning: Found item with type page and title '{title}' in space '{space_key}' with parent {parent_id} but it does not have the expected structure.",
+                    file=sys.stderr)
+                # Print the structure for debugging
+                print(f"Debug: Found item structure: {found_item}", file=sys.stderr)
+                return None
         else:
             return None
     except Exception as e:
@@ -233,7 +244,7 @@ def get_page_content(readme_file_path):
 
 # ReadMe <> Page Processing logic
 def process_readme_as_page(page_title, readme_file_path):
-    existing_page = get_page_by_title(SPACE_KEY, page_title)
+    existing_page = get_page_by_title(SPACE_KEY, page_title, PARENT_ID)
     page_content = get_page_content(readme_file_path)
     if page_content is not None:
         if existing_page:
