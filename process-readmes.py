@@ -6,6 +6,7 @@ from atlassian import Confluence
 import io # Import io for reading the file content
 # import mistune
 import markdown
+import requests
 # from md2cf.confluence_renderer import ConfluenceRenderer
 
 
@@ -14,7 +15,8 @@ import markdown
 CONFLUENCE_URL = os.getenv("CONFLUENCE_URL")
 USERNAME = os.environ.get("CONFLUENCE_USER_NAME")
 PASSWORD = os.environ.get("CONFLUENCE_USER_PAT")
-SPACE_KEY = os.environ.get("CONFLUENCE_SPACE_ID")
+SPACE_KEY = os.environ.get("CONFLUENCE_SPACE_KEY")
+SPACE_ID = os.environ.get("CONFLUENCE_SPACE_ID")
 PARENT_ID = os.environ.get("CONFLUENCE_PARENT_ID")
 
 # Page details
@@ -59,6 +61,7 @@ def get_changed_files():
     except Exception as e:
         print(f"An unexpected error occurred while getting changed files: {e}", file=sys.stderr)
         sys.exit(1)
+
 
 def is_readme(filepath):
     """
@@ -111,15 +114,76 @@ def process_first_line(line, filepath):
     print("-" * 20)
 
 
-def get_page_by_title(space_key, title, parent_id):
+# def get_confluence_page_v2(space_id, title, parent_id):
+#     params = {
+#         "space-id": space_id,
+#         "title": title
+#     }
+#     url = f"{CONFLUENCE_URL}/api/v2/pages"
+#     auth = requests.auth.HTTPBasicAuth(USERNAME, PASSWORD)
+#     headers = None
+#     response = None
+#     try:
+#         response = requests.get(url, auth=auth, headers=headers, params=params)
+#         response.raise_for_status()
+#         print("Found page content: ", response.json())
+#         if len(response.json()["results"]) == 0:
+#             print("Found response but the page content is null: ", response.json())
+#             response = None
+#         return response
+#     except requests.exceptions.RequestException as e:
+#         print(f"Error fetching page content: {e}")
+#         if response is not None:
+#             print(f"Response status code: {response.status_code}")
+#             print(f"Response text: {response.text}")
+#         return None
+
+
+def get_confluence_page_v2(space_id, title, parent_id):
+    params = {
+        "space-id": space_id,
+        "title": title
+    }
+
+    url = f"{CONFLUENCE_URL}/api/v2/pages"
+    auth = requests.auth.HTTPBasicAuth(USERNAME, PASSWORD)
+    headers = {
+        "Accept": "application/json"
+    }
+
+    try:
+        response = requests.get(url, auth=auth, headers=headers, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        pages = data.get("results", [])
+        # Filter results manually based on parent_id
+        for page in pages:
+            if page.get("parentId") == str(parent_id):  # parentId is a string
+                print("✅ Found page:", page)
+                return page  # Return the matched page
+
+        print("ℹ️ Page with matching parent_id not found.")
+        return None
+
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error fetching page content: {e}")
+        if response is not None:
+            print(f"Response status code: {response.status_code}")
+            print(f"Response text: {response.text}")
+        return None
+
+
+def get_page_by_title(space_id, title, parent_id):
     """
     Checks if a page with the given title exists in the specified space.
     Returns the page object if found, otherwise returns None.
     """
     try:
         # Use CQL to search for the page by title and space
-        cql_query = f'space = "{space_key}" and title = "{title}" and parent = "{parent_id}" and type="page" '
-        search_results = confluence.cql(cql_query, expand='version')
+        # cql_query = f'space = "{space_key}" and title = "{title}" and parent = "{parent_id}" and type="page" '
+        # search_results = confluence.cql(cql_query, expand='version')
+        search_results = get_confluence_page_v2(space_id, title, parent_id)
 
         if search_results and 'results' in search_results and len(search_results['results']) > 0:
             # Assuming the first result is the correct page
@@ -132,7 +196,7 @@ def get_page_by_title(space_key, title, parent_id):
                 return found_item
             else:
                 print(
-                    f"Warning: Found item with type page and title '{title}' in space '{space_key}' with parent {parent_id} but it does not have the expected structure.",
+                    f"Warning: Found item with type page and title '{title}' in space '{space_id}' with parent {parent_id} but it does not have the expected structure.",
                     file=sys.stderr)
                 # Print the structure for debugging
                 print(f"Debug: Found item structure: {found_item}", file=sys.stderr)
@@ -140,7 +204,7 @@ def get_page_by_title(space_key, title, parent_id):
         else:
             return None
     except Exception as e:
-        print(f"Error searching for page '{title}' in space '{space_key}': {e}")
+        print(f"Error searching for page '{title}' in space '{space_id}': {e}")
         return None
 
 
@@ -246,7 +310,7 @@ def get_page_content(readme_file_path):
 
 # ReadMe <> Page Processing logic
 def process_readme_as_page(page_title, readme_file_path):
-    existing_page = get_page_by_title(SPACE_KEY, page_title, PARENT_ID)
+    existing_page = get_page_by_title(SPACE_ID, page_title, PARENT_ID)
     page_content = get_page_content(readme_file_path)
     if page_content is not None:
         if existing_page:
