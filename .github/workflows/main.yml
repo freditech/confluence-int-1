@@ -48,6 +48,7 @@ jobs:
           CONFLUENCE_USER_PAT: ${{ secrets.CONFLUENCE_USER_PAT }}
           CONFLUENCE_URL: ${{ secrets.CONFLUENCE_URL }}
           CONFLUENCE_SPACE_ID: ${{ secrets.CONFLUENCE_SPACE_ID }}
+          CONFLUENCE_SPACE_KEY: ${{ secrets.CONFLUENCE_SPACE_KEY }}
           CONFLUENCE_PARENT_ID: ${{ secrets.CONFLUENCE_PARENT_ID }}
         # Replace 'process_readmes.py' with the actual name you used for your script file
         run: |
