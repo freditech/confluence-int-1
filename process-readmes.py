@@ -243,7 +243,6 @@ def update_page(page_id, title, body, version):
             page_id=page_id,
             title=title,
             body=body,
-            version=version,
             representation='storage' # Or 'wiki', 'atlas_doc_format'
         )
         print(f"Page '{title}' (ID: {page_id}) updated successfully.")
