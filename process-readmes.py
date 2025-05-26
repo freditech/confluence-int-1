@@ -183,12 +183,14 @@ def get_page_by_title(space_id, title, parent_id):
         # Use CQL to search for the page by title and space
         # cql_query = f'space = "{space_key}" and title = "{title}" and parent = "{parent_id}" and type="page" '
         # search_results = confluence.cql(cql_query, expand='version')
-        search_results = get_confluence_page_v2(space_id, title, parent_id)
+        search_result = get_confluence_page_v2(space_id, title, parent_id)
 
-        if search_results and 'results' in search_results and len(search_results['results']) > 0:
-            # Assuming the first result is the correct page
-            result = search_results['results'][0]
-            detailed_result = confluence.get_page_by_id(result['content']['id'], expand='version,body.storage')
+        # if search_results and 'results' in search_results and len(search_results['results']) > 0:
+        if search_result:
+            # Assuming the returned result itself is the first page
+            # result = search_results['results'][0]
+            detailed_result = confluence.get_page_by_id(search_result['id'], expand='version,body.storage')
+            print(f"Detailed Results after get_page_by_id(): {detailed_result}")
             found_item = detailed_result['results'][0]['content']
             if isinstance(found_item, dict) and 'id' in found_item and 'version' in found_item and isinstance(
                     found_item.get('version'), dict) and 'number' in found_item.get('version'):
